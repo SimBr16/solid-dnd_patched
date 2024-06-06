@@ -75,25 +75,31 @@ const createSortable = (id: Id, data: Record<string, any> = {}): Sortable => {
     );
   };
 
+  const linkTransformUpdates = (element: HTMLElement) => {
+    createEffect(() => {
+      const resolvedTransform = transform();
+      if (!transformsAreEqual(resolvedTransform, noopTransform())) {
+        const style = transformStyle(transform());
+        element.style.setProperty("transform", style.transform ?? null);
+      } else {
+        element.style.removeProperty("transform");
+      }
+    });
+  };
+
   const sortable = Object.defineProperties(
     (element: HTMLElement) => {
       draggable(element, () => ({ skipTransform: true }));
       droppable(element, () => ({ skipTransform: true }));
-
-      createEffect(() => {
-        const resolvedTransform = transform();
-        if (!transformsAreEqual(resolvedTransform, noopTransform())) {
-          const style = transformStyle(transform());
-          element.style.setProperty("transform", style.transform ?? null);
-        } else {
-          element.style.removeProperty("transform");
-        }
-      });
+      linkTransformUpdates(element);
     },
     {
       ref: {
         enumerable: true,
-        value: setNode,
+        value: (element: HTMLElement) => {
+          setNode(element);
+          linkTransformUpdates(element);
+        },
       },
       transform: {
         enumerable: true,

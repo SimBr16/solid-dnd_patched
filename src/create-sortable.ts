@@ -42,13 +42,19 @@ const createSortable = (id: Id, data: Record<string, any> = {}): Sortable => {
 
     if (resolvedCurrentIndex !== resolvedInitialIndex) {
       const currentLayout = layoutById(id);
-      const targetLayout = layoutById(
-        sortableState.initialIds[resolvedCurrentIndex]
-      );
+      const draggableLayout = layoutById(dndState.active.draggableId!);
 
-      if (currentLayout && targetLayout) {
-        delta.x = targetLayout.x - currentLayout.x;
-        delta.y = targetLayout.y - currentLayout.y;
+      if (currentLayout && draggableLayout) {
+        if (currentLayout.x !== draggableLayout.x) {
+          delta.x = draggableLayout.width;
+        }
+        if (currentLayout.y !== draggableLayout.y) {
+          delta.y = draggableLayout.height;
+        }
+        if (resolvedCurrentIndex < resolvedInitialIndex) {
+          delta.x *= -1;
+          delta.y *= -1;
+        }
       }
     }
 

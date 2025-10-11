@@ -30,25 +30,42 @@ const createSortable = (id: Id, data: Record<string, any> = {}): Sortable => {
   const droppable = createDroppable(id, data);
   const setNode = combineRefs(draggable.ref, droppable.ref);
 
-  const initialIndex = (): number => sortableState.initialIds.indexOf(id);
-  const currentIndex = (): number => sortableState.sortedIds.indexOf(id);
+  const initialIndex = (id: Id): number => sortableState.initialIds.indexOf(id);
+  const currentIndex = (id: Id): number => sortableState.sortedIds.indexOf(id);
   const layoutById = (id: Id): Layout | null =>
     dndState.droppables[id]?.layout || null;
 
   const sortedTransform = (): Transform => {
     const delta = noopTransform();
-    const resolvedInitialIndex = initialIndex();
-    const resolvedCurrentIndex = currentIndex();
+    const resolvedInitialIndex = initialIndex(id);
+    const resolvedCurrentIndex = currentIndex(id);
 
     if (resolvedCurrentIndex !== resolvedInitialIndex) {
-      const currentLayout = layoutById(id);
+      const draggId = dndState.active.draggableId!;
+      const draggableLayout = layoutById(draggId);
+
       const targetLayout = layoutById(
-        sortableState.initialIds[resolvedCurrentIndex]
+        sortableState.initialIds[
+          id === draggId
+            ? resolvedCurrentIndex
+            : initialIndex(draggId) +
+              resolvedInitialIndex -
+              resolvedCurrentIndex
+        ],
       );
 
-      if (currentLayout && targetLayout) {
-        delta.x = targetLayout.x - currentLayout.x;
-        delta.y = targetLayout.y - currentLayout.y;
+      if (draggableLayout && targetLayout) {
+        if (resolvedCurrentIndex < resolvedInitialIndex) {
+          delta.x = targetLayout.left - draggableLayout.left;
+          delta.y = targetLayout.top - draggableLayout.top;
+        } else {
+          delta.x = targetLayout.right - draggableLayout.right;
+          delta.y = targetLayout.bottom - draggableLayout.bottom;
+        }
+        if (id !== draggId) {
+          delta.x *= -1;
+          delta.y *= -1;
+        }
       }
     }
 
@@ -111,7 +128,7 @@ const createSortable = (id: Id, data: Record<string, any> = {}): Sortable => {
         enumerable: true,
         get: () => droppable.isActiveDroppable,
       },
-    }
+    },
   ) as unknown as Sortable;
 
   return sortable;
